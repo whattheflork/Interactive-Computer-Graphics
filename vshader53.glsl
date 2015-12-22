@@ -11,7 +11,13 @@ Vertex shader:
 in  vec4 vPosition;
 in vec4 vColor;
 in  vec3 vNormal;
+in vec2 vTexCoord;
+
 out vec4 color;
+out vec4 position;
+varying vec2 texCoord;
+varying float stripeTexCoord;
+varying vec2 latticeCoord;
 
 uniform vec4 AmbientProduct, DiffuseProduct, SpecularProduct;
 uniform vec4 PositionAmbient, PositionDiffuse, PositionSpecular;
@@ -27,6 +33,16 @@ uniform float lighting;
 uniform float smoothFlag;
 uniform float SpotlightFlag;
 
+uniform float Vertical;
+uniform float Slanted;
+uniform float Check;
+
+uniform float Eye;
+uniform float Obj;
+
+uniform float Upright;
+uniform float Tilted;
+
 uniform float ConstAtt;  // Constant Attenuation
 uniform float LinearAtt; // Linear Attenuation
 uniform float QuadAtt;   // Quadratic Attenuation
@@ -37,9 +53,9 @@ uniform float PosQuadAtt;
 void main()
 {
 
-    
+    vec3 pos;
 	if(lighting > 0.5) {
-		vec3 pos = (ModelView * vPosition).xyz;
+		pos = (ModelView * vPosition).xyz;
 		vec3 L;
 		float attenuation;
 		L = normalize(LightPosition.xyz);
@@ -103,14 +119,43 @@ void main()
 		}
 
 		color += attenuation * (diffuse + specular + ambient);
-		gl_Position = Projection * ModelView * vPosition;
 	}
 	else {
 		color = vColor;
-		gl_Position = Projection * ModelView * vPosition;
 	}
-    
-	
+    gl_Position = Projection * ModelView * vPosition;
+	position = gl_Position;
+	if(Vertical > 0.5 || Slanted > 0.5) {
+		if(Vertical > 0.5) {
+			if(Obj > 0.5) {
+				if(Check > 0.5) texCoord = vec2(0.75*(vPosition.x + 1), 0.75*(vPosition.y + 1));
+				stripeTexCoord = vPosition.x * 2.5;
+			}
+			else if (Check > 0.5) {
+				texCoord = vec2(0.75*(pos.x + 1), 0.75*(pos.y + 1));
+			}
+			else stripeTexCoord = pos.x * 2.5;
+		}
+		else {
+			if(Obj > 0.5) {
+				if(Check > 0.5) texCoord = vec2(0.45*(vPosition.x + vPosition.y + vPosition.z), 0.45*(vPosition.x - vPosition.y + vPosition.z));
+				stripeTexCoord = 1.5*(vPosition.x + vPosition.y + vPosition.z);
+			}
+			else if(Check > 0.5) {
+				texCoord = vec2(0.45*(pos.x + pos.y + pos.z), 0.45 * (pos.x - pos.y + pos.z));	
+			}	
+			else stripeTexCoord = 1.5*(pos.x + pos.y + pos.z);
+		}
+		if(Upright > 0.5) {
+			latticeCoord = vec2(0.5 * (vPosition.x + 1), 0.5 * (vPosition.y + 1));
+		}
+		else if(Tilted > 0.5) {
+			latticeCoord = vec2(0.3 * (vPosition.x + vPosition.y + vPosition.z), 0.3 * (vPosition.x - vPosition.y + vPosition.z));
+		}
+	}
+	else {
+		texCoord = vTexCoord;
+	}
 
 
 }
